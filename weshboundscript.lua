@@ -47,7 +47,7 @@ local function gradient(text, startColor, endColor)
 end
 
 WindUI:Popup({
-    Title = gradient("Dev by Synthorix", Color3.fromHex("#6A11CB"), Color3.fromHex("#2575FC")), -- Changed from "WindUI Demo" to "Dev by Synthorix"
+    Title = gradient("Dev by Synthorix", Color3.fromHex("#6A11CB"), Color3.fromHex("#2575FC")),
     Icon = "sparkles",
     Content = "loc:LIB_DESC",
     Buttons = {
@@ -62,10 +62,10 @@ WindUI:Popup({
 
 local Window = WindUI:CreateWindow({
     Title = "loc:WINDUI_EXAMPLE",
-    Icon = "rbxassetid://7724950285", -- Change this to your custom logo
+    Icon = "rbxassetid://7724950285",
     Author = "loc:WELCOME",
     Folder = "WindUI_Example",
-    Size = UDim2.fromOffset(580, 490),
+    Size = UDim2.fromOffset(450, 400), -- Smaller size: 450x400 instead of 580x490
     Theme = "Dark",
     User = {
         Enabled = true,
@@ -80,7 +80,7 @@ local Window = WindUI:CreateWindow({
             })
         end
     },
-    SideBarWidth = 200,
+    SideBarWidth = 160, -- Reduced sidebar width
 })
 
 Window:CreateTopbarButton("theme-switcher", "moon", function()
@@ -104,14 +104,7 @@ local TabHandles = {
     Config = Tabs.Utilities:Tab({ Title = "loc:CONFIGURATION", Icon = "settings" })
 }
 
-TabHandles.Elements:Paragraph({
-    Title = "Interactive Components",
-    Desc = "Explore WindUI's powerful elements",
-    Image = "component",
-    ImageSize = 20,
-    Color = Color3.fromHex("#30ff6a"),
-})
-
+-- Remove the paragraph to make it more compact
 TabHandles.Elements:Divider()
 
 local toggleState = false
@@ -180,14 +173,7 @@ TabHandles.Elements:Colorpicker({
     end
 })
 
-TabHandles.Appearance:Paragraph({
-    Title = "Customize Interface",
-    Desc = "Personalize your experience",
-    Image = "palette",
-    ImageSize = 20,
-    Color = "White"
-})
-
+-- Remove the paragraph to make it more compact
 local themes = {}
 for themeName, _ in pairs(WindUI:GetThemes()) do
     table.insert(themes, themeName)
@@ -371,7 +357,7 @@ else
     })
 end
 
-local footerSection = Window:Section({ Title = "WindUI " .. WindUI.Version })
+-- Remove footer section to make it more compact
 TabHandles.Config:Paragraph({
     Title = "Created with ❤️",
     Desc = "github.com/Footagesus/WindUI",
