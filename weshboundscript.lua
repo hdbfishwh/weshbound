@@ -47,7 +47,7 @@ local function gradient(text, startColor, endColor)
 end
 
 WindUI:Popup({
-    Title = gradient("WindUI Demo", Color3.fromHex("#6A11CB"), Color3.fromHex("#2575FC")),
+    Title = gradient("Dev by Synthorix", Color3.fromHex("#6A11CB"), Color3.fromHex("#2575FC")), -- Changed from "WindUI Demo" to "Dev by Synthorix"
     Icon = "sparkles",
     Content = "loc:LIB_DESC",
     Buttons = {
