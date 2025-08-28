@@ -2,6 +2,9 @@
 
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/hdbfishwh/weshbound/refs/heads/main/theme.lua"))()
 
+-- Get the player's display name first
+local displayName = game.Players.LocalPlayer.DisplayName
+
 WindUI:Localization({
     Enabled = true,
     Prefix = "loc:",
@@ -54,44 +57,7 @@ WindUI:Popup({
     }
 })
 
-
--- Add your service to get key 
---[[
-WindUI.Services.mysuperservicetogetkey = {
-    Name = "My Super Service",
-    Icon = "droplet", -- lucide or rbxassetid or raw link to img
-    
-    Args = { "ServiceId" }, --       <- \
-    --                                   |
-    -- important!!!!!!!!!!!!!!!          |
-    New = function(ServiceId) -- <------ | Args!!!!!!!!!!!!
-        
-        function validateKey(key) -- <--- this too important!!!
-            -- your function to validate key
-            -- see examples at src/utils/
-            
-            if not key then
-                return false, "Key is invalid!" 
-                
-            end
-            
-            return true, "Key is valid!" 
-        end
-        
-        function copyLink()
-            return setclipboard("link to key system service.")
-        end
-        
-        return {
-            -- ↓ do not change this!!1!1!1!1!1!!1!100
-            Verify = validateKey, -- <-----  THIS TOO IMPORTANT!!!!!
-            Copy = copyLink -- <-------- IMPORTANT!1!1!1!1!1!1!11!
-            -- ↑ do not change this!!1!1!1!1!1!!1!100
-        }
-    end
-}
-]]
-
+-- Rest of your code remains the same...
 local Window = WindUI:CreateWindow({
     Title = "loc:WINDUI_EXAMPLE",
     Icon = "palette",
@@ -99,13 +65,6 @@ local Window = WindUI:CreateWindow({
     Folder = "WindUI_Example",
     Size = UDim2.fromOffset(580, 490),
     Theme = "Dark",
-    -- Background = WindUI:Gradient({
-    --     ["0"] = { Color = Color3.fromHex("#0f0c29"), Transparency = 1 },
-    --     ["100"] = { Color = Color3.fromHex("#302b63"), Transparency = 0.9 },
-    -- }, {
-    --     Rotation = 45,
-    -- }),
-    --Background = "video:https://cdn.discordapp.com/attachments/1337368451865645096/1402703845657673878/VID_20250616_180732_158.webm?ex=68958a01&is=68943881&hm=164c5b04d1076308b38055075f7eb0653c1d73bec9bcee08e918a31321fe3058&",
     User = {
         Enabled = true,
         Anonymous = true,
@@ -118,44 +77,7 @@ local Window = WindUI:CreateWindow({
         end
     },
     SideBarWidth = 200,
-    -- KeySystem = { -- <- ↓ remove this all, if you dont neet the key system
-    --     -- Key = { "1234", "5678" },  
-    --     Note = "Example Key System. With platoboost, etc.",
-    --     -- URL = "https://github.com/Footagesus/WindUI",
-    --     -- Thumbnail = {
-    --     --     Image = "rbxassetid://",
-    --     --     Title = "Thumbnail",
-    --     -- },
-    --     API = {
-    --         {   
-    --             -- Title = "Platoboost", -- optional 
-    --             -- Desc = "Click to copy.", -- optional
-    --             -- Icon = "rbxassetid://", -- optional
-                
-    --             Type = "platoboost", -- type: platoboost, ...
-    --             ServiceId = 5541, -- service id
-    --             Secret = "1eda3b70-aab4-4394-82e4-4e7f507ae198", -- platoboost secret
-    --         },
-    --         {   
-    --             -- Title = "Other service", -- optional 
-    --             -- Desc = nil, -- optional
-    --             -- Icon = "rbxassetid://", -- optional
-                
-    --             Type = "pandadevelopment", -- type: platoboost, ...
-    --             ServiceId = "windui", -- service id
-    --         },
-    --         {   
-    --             Type = "luarmor",
-    --             ScriptId = "...",
-    --             Discord = "https://discord.com/invite/...",
-    --         },
-    --         { -- Custom service ( ↑↑ look at line 73 ↑↑ )
-    --             Type = "mysuperservicetogetkey",
-    --             ServiceId = 42,
-    --         }
-    --     },
-    --     SaveKey = true,
-    -- },
+})
 
 Window:CreateTopbarButton("theme-switcher", "moon", function()
     WindUI:SetTheme(WindUI:GetCurrentTheme() == "Dark" and "Light" or "Dark")
@@ -243,9 +165,8 @@ TabHandles.Elements:Button({
 
 TabHandles.Elements:Colorpicker({
     Title = "Select Color",
-    --Desc = "Select coloe",
     Default = Color3.fromHex("#30ff6a"),
-    Transparency = 0, -- enable transparency
+    Transparency = 0,
     Callback = function(color, transparency)
         WindUI:Notify({
             Title = "Color Changed",
@@ -317,7 +238,6 @@ WindUI:OnThemeChange(function(theme)
     ThemeToggle:Set(theme == "Dark")
     canchangetheme = true
 end)
-
 
 TabHandles.Appearance:Button({
     Title = "Create New Theme",
@@ -444,7 +364,6 @@ else
         Color = "White"
     })
 end
-
 
 local footerSection = Window:Section({ Title = "WindUI " .. WindUI.Version })
 TabHandles.Config:Paragraph({
