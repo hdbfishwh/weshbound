@@ -62,14 +62,14 @@ WindUI:Popup({
 
 local Window = WindUI:CreateWindow({
     Title = "loc:WINDUI_EXAMPLE",
-    Icon = "palette",
+    Icon = "rbxassetid://7724950285", -- Change this to your custom logo
     Author = "loc:WELCOME",
     Folder = "WindUI_Example",
     Size = UDim2.fromOffset(580, 490),
     Theme = "Dark",
     User = {
         Enabled = true,
-        Anonymous = false, -- Changed to false to show user info
+        Anonymous = false,
         Name = displayName,
         Username = userName,
         Callback = function()
