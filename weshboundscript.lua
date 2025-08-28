@@ -2,8 +2,11 @@
 
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/hdbfishwh/weshbound/refs/heads/main/theme.lua"))()
 
--- Get the player's display name first
-local displayName = game.Players.LocalPlayer.DisplayName
+-- Get the player's name properly
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local displayName = LocalPlayer.DisplayName
+local userName = LocalPlayer.Name
 
 WindUI:Localization({
     Enabled = true,
@@ -13,7 +16,7 @@ WindUI:Localization({
         ["en"] = {
             ["WINDUI_EXAMPLE"] = "Synthorix",
             ["WELCOME"] = "Weshbound Farm",
-            ["LIB_DESC"] = "Hello " .. displayName .. ", thank you for using our script :)",
+            ["LIB_DESC"] = "Hello " .. displayName .. " (@" .. userName .. "), thank you for using our script :)",
             ["SETTINGS"] = "Settings",
             ["APPEARANCE"] = "Appearance",
             ["FEATURES"] = "Features",
@@ -57,7 +60,6 @@ WindUI:Popup({
     }
 })
 
--- Rest of your code remains the same...
 local Window = WindUI:CreateWindow({
     Title = "loc:WINDUI_EXAMPLE",
     Icon = "palette",
@@ -67,11 +69,13 @@ local Window = WindUI:CreateWindow({
     Theme = "Dark",
     User = {
         Enabled = true,
-        Anonymous = true,
+        Anonymous = false, -- Changed to false to show user info
+        Name = displayName,
+        Username = userName,
         Callback = function()
             WindUI:Notify({
                 Title = "User Profile",
-                Content = "User profile clicked!",
+                Content = "User: " .. displayName .. " (@" .. userName .. ")",
                 Duration = 3
             })
         end
@@ -155,8 +159,8 @@ TabHandles.Elements:Button({
     Icon = "bell",
     Callback = function()
         WindUI:Notify({
-            Title = "Hello WindUI!",
-            Content = "This is a sample notification",
+            Title = "Hello " .. displayName .. "!",
+            Content = "This is a personalized notification for @" .. userName,
             Icon = "bell",
             Duration = 3
         })
@@ -267,7 +271,8 @@ TabHandles.Config:Paragraph({
 local configName = "default"
 local configFile = nil
 local MyPlayerData = {
-    name = "Player1",
+    name = displayName,
+    username = userName,
     level = 1,
     inventory = { "sword", "shield", "potion" }
 }
@@ -340,8 +345,9 @@ if ConfigManager then
                 
                 TabHandles.Config:Paragraph({
                     Title = "Player Data",
-                    Desc = string.format("Name: %s\nLevel: %d\nInventory: %s", 
+                    Desc = string.format("Name: %s (@%s)\nLevel: %d\nInventory: %s", 
                         MyPlayerData.name, 
+                        MyPlayerData.username, 
                         MyPlayerData.level, 
                         table.concat(MyPlayerData.inventory, ", "))
                 })
@@ -390,7 +396,7 @@ TabHandles.Config:Paragraph({
 })
 
 Window:OnClose(function()
-    print("Window closed")
+    print("Window closed for user: " .. userName)
     
     if ConfigManager and configFile then
         configFile:Set("playerData", MyPlayerData)
@@ -401,5 +407,5 @@ Window:OnClose(function()
 end)
 
 Window:OnDestroy(function()
-    print("Window destroyed")
+    print("Window destroyed for user: " .. userName)
 end)
