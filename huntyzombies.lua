@@ -26,7 +26,15 @@ WindUI:Localization({
             ["SAVE_CONFIG"] = "Save Configuration",
             ["LOAD_CONFIG"] = "Load Configuration",
             ["THEME_SELECT"] = "Select Theme",
-            ["TRANSPARENCY"] = "Window Transparency"
+            ["TRANSPARENCY"] = "Window Transparency",
+            ["AIMBOT"] = "Aimbot",
+            ["AIMBOT_DESC"] = "NPC Head Detection System",
+            ["ENABLE_AIMBOT"] = "Enable Aimbot",
+            ["CIRCLE_RADIUS"] = "Circle Radius",
+            ["CIRCLE_COLOR"] = "Circle Color",
+            ["CIRCLE_THICKNESS"] = "Circle Thickness",
+            ["TEST_AIMBOT"] = "Test Aimbot",
+            ["AIMBOT_SETTINGS"] = "Aimbot Settings"
         }
     }
 })
@@ -95,14 +103,203 @@ end, 990)
 local Tabs = {
     Main = Window:Section({ Title = "loc:FEATURES", Opened = true }),
     Settings = Window:Section({ Title = "loc:SETTINGS", Opened = true }),
-    Utilities = Window:Section({ Title = "loc:UTILITIES", Opened = true })
+    Utilities = Window:Section({ Title = "loc:UTILITIES", Opened = true }),
+    Aimbot = Window:Section({ Title = "loc:AIMBOT", Opened = true })
 }
 
 local TabHandles = {
     Elements = Tabs.Main:Tab({ Title = "loc:UI_ELEMENTS", Icon = "layout-grid", Desc = "UI Elements Example" }),
     Appearance = Tabs.Settings:Tab({ Title = "loc:APPEARANCE", Icon = "brush" }),
-    Config = Tabs.Utilities:Tab({ Title = "loc:CONFIGURATION", Icon = "settings" })
+    Config = Tabs.Utilities:Tab({ Title = "loc:CONFIGURATION", Icon = "settings" }),
+    AimbotTab = Tabs.Aimbot:Tab({ Title = "loc:AIMBOT_SETTINGS", Icon = "target", Desc = "loc:AIMBOT_DESC" })
 }
+
+-- Aimbot functionality
+local aimbotEnabled = false
+local circleRadius = 50
+local circleColor = Color3.fromRGB(255, 0, 0)
+local circleTransparency = 0.5
+local circleThickness = 2
+
+-- Drawing objects
+local circle = nil
+local connection = nil
+
+-- Function to find the closest NPC head
+local function findClosestNPC()
+    local closestHead = nil
+    local closestDistance = math.huge
+    local localPlayer = game:GetService("Players").LocalPlayer
+    local camera = workspace.CurrentCamera
+    
+    if not localPlayer.Character or not localPlayer.Character:FindFirstChild("Head") then
+        return nil
+    end
+    
+    local localHead = localPlayer.Character.Head
+    local monsters = workspace:FindFirstChild("Monster")
+    
+    if not monsters then
+        return nil
+    end
+    
+    for _, monster in pairs(monsters:GetChildren()) do
+        if monster:FindFirstChild("Head") and monster:IsA("Model") then
+            local head = monster.Head
+            local distance = (localHead.Position - head.Position).Magnitude
+            
+            if distance < closestDistance then
+                closestDistance = distance
+                closestHead = head
+            end
+        end
+    end
+    
+    return closestHead
+end
+
+-- Function to draw circle around head
+local function drawCircle(head)
+    if not head then
+        if circle then
+            circle:Remove()
+            circle = nil
+        end
+        return
+    end
+    
+    if not circle then
+        circle = Drawing.new("Circle")
+        circle.Color = circleColor
+        circle.Transparency = circleTransparency
+        circle.Thickness = circleThickness
+        circle.Filled = false
+    end
+    
+    local camera = workspace.CurrentCamera
+    local headPos, onScreen = camera:WorldToViewportPoint(head.Position)
+    
+    if onScreen then
+        circle.Visible = true
+        circle.Position = Vector2.new(headPos.X, headPos.Y)
+        circle.Radius = circleRadius
+    else
+        circle.Visible = false
+    end
+end
+
+-- Function to toggle aimbot
+local function toggleAimbot(state)
+    aimbotEnabled = state
+    
+    if aimbotEnabled then
+        if connection then
+            connection:Disconnect()
+        end
+        
+        connection = game:GetService("RunService").RenderStepped:Connect(function()
+            if aimbotEnabled then
+                local closestHead = findClosestNPC()
+                drawCircle(closestHead)
+            else
+                if circle then
+                    circle:Remove()
+                    circle = nil
+                end
+            end
+        end)
+        
+        WindUI:Notify({
+            Title = "Aimbot",
+            Content = "Aimbot enabled",
+            Icon = "target",
+            Duration = 2
+        })
+    else
+        if connection then
+            connection:Disconnect()
+            connection = nil
+        end
+        
+        if circle then
+            circle:Remove()
+            circle = nil
+        end
+        
+        WindUI:Notify({
+            Title = "Aimbot",
+            Content = "Aimbot disabled",
+            Icon = "x",
+            Duration = 2
+        })
+    end
+end
+
+-- Add aimbot controls to the UI
+TabHandles.AimbotTab:Toggle({
+    Title = "loc:ENABLE_AIMBOT",
+    Desc = "Detects NPC heads in Monster folder",
+    Value = false,
+    Callback = toggleAimbot
+})
+
+TabHandles.AimbotTab:Slider({
+    Title = "loc:CIRCLE_RADIUS",
+    Desc = "Adjust the circle size around NPC heads",
+    Value = { Min = 10, Max = 200, Default = circleRadius },
+    Callback = function(value)
+        circleRadius = value
+    end
+})
+
+TabHandles.AimbotTab:Colorpicker({
+    Title = "loc:CIRCLE_COLOR",
+    Default = circleColor,
+    Transparency = circleTransparency,
+    Callback = function(color, transparency)
+        circleColor = color
+        circleTransparency = transparency
+        if circle then
+            circle.Color = color
+            circle.Transparency = transparency
+        end
+    end
+})
+
+TabHandles.AimbotTab:Slider({
+    Title = "loc:CIRCLE_THICKNESS",
+    Desc = "Adjust the circle line thickness",
+    Value = { Min = 1, Max = 10, Default = circleThickness },
+    Callback = function(value)
+        circleThickness = value
+        if circle then
+            circle.Thickness = value
+        end
+    end
+})
+
+TabHandles.AimbotTab:Button({
+    Title = "loc:TEST_AIMBOT",
+    Icon = "eye",
+    Callback = function()
+        local closestHead = findClosestNPC()
+        if closestHead then
+            WindUI:Notify({
+                Title = "Aimbot Test",
+                Content = "Found NPC head: " .. closestHead.Parent.Name,
+                Icon = "check",
+                Duration = 3
+            })
+        else
+            WindUI:Notify({
+                Title = "Aimbot Test",
+                Content = "No NPC heads found in Monster folder",
+                Icon = "x",
+                Duration = 3
+            })
+        end
+    end
+})
 
 -- Remove the paragraph to make it more compact
 TabHandles.Elements:Divider()
@@ -381,6 +578,7 @@ TabHandles.Config:Paragraph({
     }
 })
 
+-- Clean up when window is closed
 Window:OnClose(function()
     print("Window closed for user: " .. userName)
     
@@ -390,8 +588,26 @@ Window:OnClose(function()
         configFile:Save()
         print("Config auto-saved on close")
     end
+    
+    -- Clean up aimbot resources
+    if connection then
+        connection:Disconnect()
+    end
+    
+    if circle then
+        circle:Remove()
+    end
 end)
 
 Window:OnDestroy(function()
     print("Window destroyed for user: " .. userName)
+    
+    -- Clean up aimbot resources
+    if connection then
+        connection:Disconnect()
+    end
+    
+    if circle then
+        circle:Remove()
+    end
 end)
