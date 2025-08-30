@@ -8,6 +8,87 @@ local LocalPlayer = Players.LocalPlayer
 local displayName = LocalPlayer.DisplayName
 local userName = LocalPlayer.Name
 
+-- Auto Farm System
+local AutoFarm = {
+    settings = {
+        attackDistance = 5,
+        enabled = false,
+        autoMobsDoors = false,
+        autoSkills = false,
+        collectCoins = false,
+        autoEscape = false
+    },
+    running = false
+}
+
+-- Main automation function
+function AutoFarm:start()
+    if self.running then return end
+    self.running = true
+    
+    spawn(function()
+        while self.running and self.settings.enabled do
+            -- Auto Attack
+            if self.settings.enabled then
+                self:autoAttack()
+            end
+            
+            -- Auto Mobs & Doors
+            if self.settings.autoMobsDoors then
+                self:handleMobsDoors()
+            end
+            
+            -- Auto Skills
+            if self.settings.autoSkills then
+                self:useSkills()
+            end
+            
+            -- Collect Coins
+            if self.settings.collectCoins then
+                self:collectCoins()
+            end
+            
+            -- Auto Escape
+            if self.settings.autoEscape then
+                self:checkEscape()
+            end
+            
+            wait(0.5) -- Prevent lag
+        end
+        self.running = false
+    end)
+end
+
+function AutoFarm:stop()
+    self.running = false
+end
+
+function AutoFarm:autoAttack()
+    -- Implement your game's attack logic here
+    -- Example: find nearest enemy and attack
+    print("Auto Attack: Searching for targets...")
+end
+
+function AutoFarm:handleMobsDoors()
+    -- Implement mobs and doors interaction
+    print("Auto Mobs & Doors: Processing...")
+end
+
+function AutoFarm:useSkills()
+    -- Implement skill usage
+    print("Auto Skills: Using skills...")
+end
+
+function AutoFarm:collectCoins()
+    -- Implement coin collection
+    print("Collect Coins: Searching for coins...")
+end
+
+function AutoFarm:checkEscape()
+    -- Implement escape logic
+    print("Auto Escape: Checking health...")
+end
+
 WindUI:Localization({
     Enabled = true,
     Prefix = "loc:",
@@ -65,7 +146,7 @@ local Window = WindUI:CreateWindow({
     Icon = "rbxassetid://7724950285",
     Author = "loc:WELCOME",
     Folder = "WindUI_Example",
-    Size = UDim2.fromOffset(450, 400), -- Smaller size: 450x400 instead of 580x490
+    Size = UDim2.fromOffset(450, 500), -- Increased size to fit all features
     Theme = "Dark",
     User = {
         Enabled = true,
@@ -80,7 +161,7 @@ local Window = WindUI:CreateWindow({
             })
         end
     },
-    SideBarWidth = 160, -- Reduced sidebar width
+    SideBarWidth = 160,
 })
 
 Window:CreateTopbarButton("theme-switcher", "moon", function()
@@ -99,13 +180,54 @@ local Tabs = {
 }
 
 local TabHandles = {
-    Elements = Tabs.Main:Tab({ Title = "loc:UI_ELEMENTS", Icon = "layout-grid", Desc = "UI Elements Example" }),
+    Elements = Tabs.Main:Tab({ Title = "Auto Farm", Icon = "bot", Desc = "Automation Features" }),
     Appearance = Tabs.Settings:Tab({ Title = "loc:APPEARANCE", Icon = "brush" }),
     Config = Tabs.Utilities:Tab({ Title = "loc:CONFIGURATION", Icon = "settings" })
 }
 
--- Remove the paragraph to make it more compact
 TabHandles.Elements:Divider()
+
+-- Main Auto Farm Toggle
+local mainToggle = TabHandles.Elements:Toggle({
+    Title = "Enable Auto Farm",
+    Desc = "Master switch for all automation features",
+    Value = false,
+    Callback = function(state) 
+        AutoFarm.settings.enabled = state
+        if state then
+            AutoFarm:start()
+            WindUI:Notify({
+                Title = "Auto Farm",
+                Content = "Started automation system",
+                Icon = "play",
+                Duration = 2
+            })
+        else
+            AutoFarm:stop()
+            WindUI:Notify({
+                Title = "Auto Farm",
+                Content = "Stopped automation system",
+                Icon = "stop",
+                Duration = 2
+            })
+        end
+    end
+})
+
+-- Set Distance - slider limit from 0 to 10
+local distanceSlider = TabHandles.Elements:Slider({
+    Title = "Attack Distance",
+    Desc = "Set the maximum attack distance (0-10)",
+    Value = { Min = 0, Max = 10, Default = 5 },
+    Callback = function(value)
+        AutoFarm.settings.attackDistance = value
+        WindUI:Notify({
+            Title = "Distance Set",
+            Content = "Attack distance: " .. value,
+            Duration = 2
+        })
+    end
+})
 
 -- Auto Attack - Switch button
 local autoAttackToggle = TabHandles.Elements:Toggle({
@@ -113,24 +235,11 @@ local autoAttackToggle = TabHandles.Elements:Toggle({
     Desc = "Automatically attack nearby enemies",
     Value = false,
     Callback = function(state) 
+        AutoFarm.settings.enabled = state
         WindUI:Notify({
             Title = "Auto Attack",
             Content = state and "Enabled" or "Disabled",
             Icon = state and "sword" or "x",
-            Duration = 2
-        })
-    end
-})
-
--- Set Distance - slider limit from 0 to 10
-local distanceSlider = TabHandles.Elements:Slider({
-    Title = "Attack Distance",
-    Desc = "Set the maximum attack distance",
-    Value = { Min = 0, Max = 10, Default = 5 },
-    Callback = function(value)
-        WindUI:Notify({
-            Title = "Distance Set",
-            Content = "Attack distance: " .. value,
             Duration = 2
         })
     end
@@ -142,6 +251,7 @@ local autoMobsDoorsToggle = TabHandles.Elements:Toggle({
     Desc = "Automatically detect and interact with mobs and doors",
     Value = false,
     Callback = function(state) 
+        AutoFarm.settings.autoMobsDoors = state
         WindUI:Notify({
             Title = "Auto Mobs & Doors",
             Content = state and "Enabled" or "Disabled",
@@ -157,6 +267,7 @@ local autoSkillToggle = TabHandles.Elements:Toggle({
     Desc = "Automatically use skills and perks",
     Value = false,
     Callback = function(state) 
+        AutoFarm.settings.autoSkills = state
         WindUI:Notify({
             Title = "Auto Skills",
             Content = state and "Enabled" or "Disabled",
@@ -172,6 +283,7 @@ local collectCoinsToggle = TabHandles.Elements:Toggle({
     Desc = "Automatically collect nearby coins",
     Value = false,
     Callback = function(state) 
+        AutoFarm.settings.collectCoins = state
         WindUI:Notify({
             Title = "Coin Collection",
             Content = state and "Enabled" or "Disabled",
@@ -187,6 +299,7 @@ local autoEscapeToggle = TabHandles.Elements:Toggle({
     Desc = "Automatically escape when health is low",
     Value = false,
     Callback = function(state) 
+        AutoFarm.settings.autoEscape = state
         WindUI:Notify({
             Title = "Auto Escape",
             Content = state and "Enabled" or "Disabled",
@@ -196,73 +309,48 @@ local autoEscapeToggle = TabHandles.Elements:Toggle({
     end
 })
 
-local toggleState = false
-local featureToggle = TabHandles.Elements:Toggle({
-    Title = "Enable Advanced Features",
-    Desc = "Unlocks additional functionality",
-    Value = false,
-    Callback = function(state) 
-        toggleState = state
-        WindUI:Notify({
-            Title = "Features",
-            Content = state and "Features Enabled" or "Features Disabled",
-            Icon = state and "check" or "x",
-            Duration = 2
-        })
-    end
-})
-
-local intensitySlider = TabHandles.Elements:Slider({
-    Title = "Effect Intensity",
-    Desc = "Adjust the effect strength",
-    Value = { Min = 0, Max = 100, Default = 50 },
-    Callback = function(value)
-        print("Intensity set to:", value)
-    end
-})
-
-local modeDropdown = TabHandles.Elements:Dropdown({
-    Title = "Select Mode",
-    Values = { "Standard", "Advanced", "Expert" },
-    Value = "Standard",
-    Callback = function(option)
-        WindUI:Notify({
-            Title = "Mode Changed",
-            Content = "Selected: "..option,
-            Duration = 2
-        })
-    end
-})
-
 TabHandles.Elements:Divider()
 
+-- Status display
+TabHandles.Elements:Paragraph({
+    Title = "Farm Status",
+    Desc = "Ready to automate your gameplay",
+    Image = "activity",
+    ImageSize = 20,
+    Color = "Green"
+})
+
+-- Test button to check if features work
 TabHandles.Elements:Button({
-    Title = "Show Notification",
-    Icon = "bell",
+    Title = "Test All Features",
+    Icon = "test-tube",
     Callback = function()
         WindUI:Notify({
-            Title = "Hello " .. displayName .. "!",
-            Content = "This is a personalized notification for @" .. userName,
-            Icon = "bell",
+            Title = "Feature Test",
+            Content = "Testing all automation features...",
             Duration = 3
         })
+        
+        -- Test each feature
+        if AutoFarm.settings.enabled then
+            AutoFarm:autoAttack()
+            if AutoFarm.settings.autoMobsDoors then
+                AutoFarm:handleMobsDoors()
+            end
+            if AutoFarm.settings.autoSkills then
+                AutoFarm:useSkills()
+            end
+            if AutoFarm.settings.collectCoins then
+                AutoFarm:collectCoins()
+            end
+            if AutoFarm.settings.autoEscape then
+                AutoFarm:checkEscape()
+            end
+        end
     end
 })
 
-TabHandles.Elements:Colorpicker({
-    Title = "Select Color",
-    Default = Color3.fromHex("#30ff6a"),
-    Transparency = 0,
-    Callback = function(color, transparency)
-        WindUI:Notify({
-            Title = "Color Changed",
-            Content = "New color: "..color:ToHex().."\nTransparency: "..transparency,
-            Duration = 2
-        })
-    end
-})
-
--- Remove the paragraph to make it more compact
+-- Remove the old elements to avoid duplication
 local themes = {}
 for themeName, _ in pairs(WindUI:GetThemes()) do
     table.insert(themes, themeName)
@@ -318,23 +406,6 @@ WindUI:OnThemeChange(function(theme)
     canchangetheme = true
 end)
 
-TabHandles.Appearance:Button({
-    Title = "Create New Theme",
-    Icon = "plus",
-    Callback = function()
-        Window:Dialog({
-            Title = "Create Theme",
-            Content = "This feature is coming soon!",
-            Buttons = {
-                {
-                    Title = "OK",
-                    Variant = "Primary"
-                }
-            }
-        })
-    end
-})
-
 TabHandles.Config:Paragraph({
     Title = "Configuration Manager",
     Desc = "Save and load your settings",
@@ -343,7 +414,7 @@ TabHandles.Config:Paragraph({
     Color = "White"
 })
 
-local configName = "default"
+local configName = "autofarm_config"
 local configFile = nil
 local MyPlayerData = {
     name = displayName,
@@ -356,7 +427,7 @@ TabHandles.Config:Input({
     Title = "Config Name",
     Value = configName,
     Callback = function(value)
-        configName = value or "default"
+        configName = value or "autofarm_config"
     end
 })
 
@@ -371,15 +442,10 @@ if ConfigManager then
         Callback = function()
             configFile = ConfigManager:CreateConfig(configName)
             
-            configFile:Register("featureToggle", featureToggle)
-            configFile:Register("intensitySlider", intensitySlider)
-            configFile:Register("modeDropdown", modeDropdown)
-            configFile:Register("themeDropdown", themeDropdown)
-            configFile:Register("transparencySlider", transparencySlider)
-            
-            -- Register the new features
-            configFile:Register("autoAttackToggle", autoAttackToggle)
+            -- Register all farm settings
+            configFile:Register("mainToggle", mainToggle)
             configFile:Register("distanceSlider", distanceSlider)
+            configFile:Register("autoAttackToggle", autoAttackToggle)
             configFile:Register("autoMobsDoorsToggle", autoMobsDoorsToggle)
             configFile:Register("autoSkillToggle", autoSkillToggle)
             configFile:Register("collectCoinsToggle", collectCoinsToggle)
@@ -425,15 +491,6 @@ if ConfigManager then
                     Icon = "refresh-cw",
                     Duration = 5
                 })
-                
-                TabHandles.Config:Paragraph({
-                    Title = "Player Data",
-                    Desc = string.format("Name: %s (@%s)\nLevel: %d\nInventory: %s", 
-                        MyPlayerData.name, 
-                        MyPlayerData.username, 
-                        MyPlayerData.level, 
-                        table.concat(MyPlayerData.inventory, ", "))
-                })
             else
                 WindUI:Notify({ 
                     Title = "Error", 
@@ -454,32 +511,18 @@ else
     })
 end
 
--- Remove footer section to make it more compact
+-- Instructions for game-specific implementation
 TabHandles.Config:Paragraph({
-    Title = "Created with ❤️",
-    Desc = "github.com/Footagesus/WindUI",
-    Image = "github",
+    Title = "Implementation Required",
+    Desc = "You need to implement game-specific functions in the AutoFarm table methods",
+    Image = "alert-circle",
     ImageSize = 20,
-    Color = "Grey",
-    Buttons = {
-        {
-            Title = "Copy Link",
-            Icon = "copy",
-            Variant = "Tertiary",
-            Callback = function()
-                setclipboard("https://github.com/Footagesus/WindUI")
-                WindUI:Notify({
-                    Title = "Copied!",
-                    Content = "GitHub link copied to clipboard",
-                    Duration = 2
-                })
-            end
-        }
-    }
+    Color = "Yellow"
 })
 
 Window:OnClose(function()
     print("Window closed for user: " .. userName)
+    AutoFarm:stop()
     
     if ConfigManager and configFile then
         configFile:Set("playerData", MyPlayerData)
@@ -491,4 +534,12 @@ end)
 
 Window:OnDestroy(function()
     print("Window destroyed for user: " .. userName)
+    AutoFarm:stop()
 end)
+
+-- Initial notification
+WindUI:Notify({
+    Title = "Auto Farm Loaded",
+    Content = "Features are ready! Enable them from the Auto Farm tab",
+    Duration = 5
+})
