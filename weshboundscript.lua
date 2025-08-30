@@ -107,6 +107,95 @@ local TabHandles = {
 -- Remove the paragraph to make it more compact
 TabHandles.Elements:Divider()
 
+-- Auto Attack - Switch button
+local autoAttackToggle = TabHandles.Elements:Toggle({
+    Title = "Auto Attack",
+    Desc = "Automatically attack nearby enemies",
+    Value = false,
+    Callback = function(state) 
+        WindUI:Notify({
+            Title = "Auto Attack",
+            Content = state and "Enabled" or "Disabled",
+            Icon = state and "sword" or "x",
+            Duration = 2
+        })
+    end
+})
+
+-- Set Distance - slider limit from 0 to 10
+local distanceSlider = TabHandles.Elements:Slider({
+    Title = "Attack Distance",
+    Desc = "Set the maximum attack distance",
+    Value = { Min = 0, Max = 10, Default = 5 },
+    Callback = function(value)
+        WindUI:Notify({
+            Title = "Distance Set",
+            Content = "Attack distance: " .. value,
+            Duration = 2
+        })
+    end
+})
+
+-- Auto Mobs & Doors - Switch button
+local autoMobsDoorsToggle = TabHandles.Elements:Toggle({
+    Title = "Auto Mobs & Doors",
+    Desc = "Automatically detect and interact with mobs and doors",
+    Value = false,
+    Callback = function(state) 
+        WindUI:Notify({
+            Title = "Auto Mobs & Doors",
+            Content = state and "Enabled" or "Disabled",
+            Icon = state and "door-open" or "x",
+            Duration = 2
+        })
+    end
+})
+
+-- Auto Skill & Perks - Switch button
+local autoSkillToggle = TabHandles.Elements:Toggle({
+    Title = "Auto Skill & Perks",
+    Desc = "Automatically use skills and perks",
+    Value = false,
+    Callback = function(state) 
+        WindUI:Notify({
+            Title = "Auto Skills",
+            Content = state and "Enabled" or "Disabled",
+            Icon = state and "zap" or "x",
+            Duration = 2
+        })
+    end
+})
+
+-- Collect Coins - Switch button
+local collectCoinsToggle = TabHandles.Elements:Toggle({
+    Title = "Collect Coins",
+    Desc = "Automatically collect nearby coins",
+    Value = false,
+    Callback = function(state) 
+        WindUI:Notify({
+            Title = "Coin Collection",
+            Content = state and "Enabled" or "Disabled",
+            Icon = state and "coin" or "x",
+            Duration = 2
+        })
+    end
+})
+
+-- Auto Escape - Switch button
+local autoEscapeToggle = TabHandles.Elements:Toggle({
+    Title = "Auto Escape",
+    Desc = "Automatically escape when health is low",
+    Value = false,
+    Callback = function(state) 
+        WindUI:Notify({
+            Title = "Auto Escape",
+            Content = state and "Enabled" or "Disabled",
+            Icon = state and "shield" or "x",
+            Duration = 2
+        })
+    end
+})
+
 local toggleState = false
 local featureToggle = TabHandles.Elements:Toggle({
     Title = "Enable Advanced Features",
@@ -287,6 +376,14 @@ if ConfigManager then
             configFile:Register("modeDropdown", modeDropdown)
             configFile:Register("themeDropdown", themeDropdown)
             configFile:Register("transparencySlider", transparencySlider)
+            
+            -- Register the new features
+            configFile:Register("autoAttackToggle", autoAttackToggle)
+            configFile:Register("distanceSlider", distanceSlider)
+            configFile:Register("autoMobsDoorsToggle", autoMobsDoorsToggle)
+            configFile:Register("autoSkillToggle", autoSkillToggle)
+            configFile:Register("collectCoinsToggle", collectCoinsToggle)
+            configFile:Register("autoEscapeToggle", autoEscapeToggle)
             
             configFile:Set("playerData", MyPlayerData)
             configFile:Set("lastSave", os.date("%Y-%m-%d %H:%M:%S"))
