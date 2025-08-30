@@ -34,7 +34,11 @@ WindUI:Localization({
             ["CIRCLE_COLOR"] = "Circle Color",
             ["CIRCLE_THICKNESS"] = "Circle Thickness",
             ["TEST_AIMBOT"] = "Test Aimbot",
-            ["AIMBOT_SETTINGS"] = "Aimbot Settings"
+            ["AIMBOT_SETTINGS"] = "Aimbot Settings",
+            ["MAX_DISTANCE"] = "Max Detection Distance",
+            ["SHOW_DISTANCE"] = "Show Distance",
+            ["AUTO_AIM"] = "Auto Aim",
+            ["AIM_KEY"] = "Aim Keybind"
         }
     }
 })
@@ -73,7 +77,7 @@ local Window = WindUI:CreateWindow({
     Icon = "rbxassetid://7724950285",
     Author = "loc:WELCOME",
     Folder = "WindUI_Example",
-    Size = UDim2.fromOffset(450, 400), -- Smaller size: 450x400 instead of 580x490
+    Size = UDim2.fromOffset(500, 500),
     Theme = "Dark",
     User = {
         Enabled = true,
@@ -88,7 +92,7 @@ local Window = WindUI:CreateWindow({
             })
         end
     },
-    SideBarWidth = 160, -- Reduced sidebar width
+    SideBarWidth = 160,
 })
 
 Window:CreateTopbarButton("theme-switcher", "moon", function()
@@ -120,10 +124,56 @@ local circleRadius = 50
 local circleColor = Color3.fromRGB(255, 0, 0)
 local circleTransparency = 0.5
 local circleThickness = 2
+local maxDistance = 500
+local showDistance = true
+local autoAim = false
+local aimKey = Enum.UserInputType.MouseButton2
+
+-- Supported monster types
+local supportedMonsters = {
+    "Bat", "Boos_1", "Boss_2", "Boss_3", "Boss_4", 
+    "Ghost", "Pumpkin", "Secret", "Stalker", "Zombie"
+}
 
 -- Drawing objects
 local circle = nil
+local distanceText = nil
 local connection = nil
+
+-- Function to check if a model is a supported monster
+local function isSupportedMonster(model)
+    for _, monsterType in ipairs(supportedMonsters) do
+        if string.find(model.Name, monsterType) then
+            return true
+        end
+    end
+    return false
+end
+
+-- Function to find the head part in a monster model
+local function findHeadPart(model)
+    -- First check for exact "Head" part
+    if model:FindFirstChild("Head") then
+        return model.Head
+    end
+    
+    -- Check for other possible head parts
+    local possibleHeadNames = {"Head", "head", "HEAD", "HumanoidRootPart", "UpperTorso"}
+    for _, name in ipairs(possibleHeadNames) do
+        if model:FindFirstChild(name) then
+            return model[name]
+        end
+    end
+    
+    -- If no specific head part found, try to find any part that might be the head
+    for _, part in ipairs(model:GetChildren()) do
+        if part:IsA("BasePart") and part.Name:lower():find("head") then
+            return part
+        end
+    end
+    
+    return nil
+end
 
 -- Function to find the closest NPC head
 local function findClosestNPC()
@@ -133,37 +183,44 @@ local function findClosestNPC()
     local camera = workspace.CurrentCamera
     
     if not localPlayer.Character or not localPlayer.Character:FindFirstChild("Head") then
-        return nil
+        return nil, nil
     end
     
     local localHead = localPlayer.Character.Head
     local monsters = workspace:FindFirstChild("Monster")
     
     if not monsters then
-        return nil
+        return nil, nil
     end
     
     for _, monster in pairs(monsters:GetChildren()) do
-        if monster:FindFirstChild("Head") and monster:IsA("Model") then
-            local head = monster.Head
-            local distance = (localHead.Position - head.Position).Magnitude
+        if monster:IsA("Model") and isSupportedMonster(monster) then
+            local head = findHeadPart(monster)
             
-            if distance < closestDistance then
-                closestDistance = distance
-                closestHead = head
+            if head then
+                local distance = (localHead.Position - head.Position).Magnitude
+                
+                if distance < closestDistance and distance <= maxDistance then
+                    closestDistance = distance
+                    closestHead = head
+                end
             end
         end
     end
     
-    return closestHead
+    return closestHead, closestDistance
 end
 
 -- Function to draw circle around head
-local function drawCircle(head)
+local function drawCircle(head, distance)
     if not head then
         if circle then
             circle:Remove()
             circle = nil
+        end
+        if distanceText then
+            distanceText:Remove()
+            distanceText = nil
         end
         return
     end
@@ -176,6 +233,15 @@ local function drawCircle(head)
         circle.Filled = false
     end
     
+    if showDistance and not distanceText then
+        distanceText = Drawing.new("Text")
+        distanceText.Color = circleColor
+        distanceText.Size = 16
+        distanceText.Center = true
+        distanceText.Outline = true
+        distanceText.OutlineColor = Color3.new(0, 0, 0)
+    end
+    
     local camera = workspace.CurrentCamera
     local headPos, onScreen = camera:WorldToViewportPoint(head.Position)
     
@@ -183,8 +249,17 @@ local function drawCircle(head)
         circle.Visible = true
         circle.Position = Vector2.new(headPos.X, headPos.Y)
         circle.Radius = circleRadius
+        
+        if showDistance and distanceText then
+            distanceText.Visible = true
+            distanceText.Position = Vector2.new(headPos.X, headPos.Y + circleRadius + 5)
+            distanceText.Text = tostring(math.floor(distance)) .. " studs"
+        end
     else
         circle.Visible = false
+        if distanceText then
+            distanceText.Visible = false
+        end
     end
 end
 
@@ -199,12 +274,22 @@ local function toggleAimbot(state)
         
         connection = game:GetService("RunService").RenderStepped:Connect(function()
             if aimbotEnabled then
-                local closestHead = findClosestNPC()
-                drawCircle(closestHead)
+                local closestHead, distance = findClosestNPC()
+                drawCircle(closestHead, distance)
+                
+                -- Auto aim functionality
+                if autoAim and closestHead then
+                    local camera = workspace.CurrentCamera
+                    camera.CFrame = CFrame.new(camera.CFrame.Position, closestHead.Position)
+                end
             else
                 if circle then
                     circle:Remove()
                     circle = nil
+                end
+                if distanceText then
+                    distanceText:Remove()
+                    distanceText = nil
                 end
             end
         end)
@@ -224,6 +309,10 @@ local function toggleAimbot(state)
         if circle then
             circle:Remove()
             circle = nil
+        end
+        if distanceText then
+            distanceText:Remove()
+            distanceText = nil
         end
         
         WindUI:Notify({
@@ -252,6 +341,15 @@ TabHandles.AimbotTab:Slider({
     end
 })
 
+TabHandles.AimbotTab:Slider({
+    Title = "loc:MAX_DISTANCE",
+    Desc = "Maximum detection distance in studs",
+    Value = { Min = 50, Max = 1000, Default = maxDistance },
+    Callback = function(value)
+        maxDistance = value
+    end
+})
+
 TabHandles.AimbotTab:Colorpicker({
     Title = "loc:CIRCLE_COLOR",
     Default = circleColor,
@@ -262,6 +360,9 @@ TabHandles.AimbotTab:Colorpicker({
         if circle then
             circle.Color = color
             circle.Transparency = transparency
+        end
+        if distanceText then
+            distanceText.Color = color
         end
     end
 })
@@ -278,22 +379,44 @@ TabHandles.AimbotTab:Slider({
     end
 })
 
+TabHandles.AimbotTab:Toggle({
+    Title = "loc:SHOW_DISTANCE",
+    Desc = "Display distance to target",
+    Value = showDistance,
+    Callback = function(state)
+        showDistance = state
+        if not state and distanceText then
+            distanceText:Remove()
+            distanceText = nil
+        end
+    end
+})
+
+TabHandles.AimbotTab:Toggle({
+    Title = "loc:AUTO_AIM",
+    Desc = "Automatically aim at the closest target",
+    Value = autoAim,
+    Callback = function(state)
+        autoAim = state
+    end
+})
+
 TabHandles.AimbotTab:Button({
     Title = "loc:TEST_AIMBOT",
     Icon = "eye",
     Callback = function()
-        local closestHead = findClosestNPC()
+        local closestHead, distance = findClosestNPC()
         if closestHead then
             WindUI:Notify({
                 Title = "Aimbot Test",
-                Content = "Found NPC head: " .. closestHead.Parent.Name,
+                Content = "Found " .. closestHead.Parent.Name .. " at " .. math.floor(distance) .. " studs",
                 Icon = "check",
                 Duration = 3
             })
         else
             WindUI:Notify({
                 Title = "Aimbot Test",
-                Content = "No NPC heads found in Monster folder",
+                Content = "No supported NPCs found in Monster folder",
                 Icon = "x",
                 Duration = 3
             })
@@ -301,6 +424,16 @@ TabHandles.AimbotTab:Button({
     end
 })
 
+-- Display supported monsters
+TabHandles.AimbotTab:Paragraph({
+    Title = "Supported Monsters",
+    Desc = table.concat(supportedMonsters, ", "),
+    Image = "info",
+    ImageSize = 20,
+    Color = "White"
+})
+
+-- [Rest of your existing UI code remains the same]
 -- Remove the paragraph to make it more compact
 TabHandles.Elements:Divider()
 
@@ -597,6 +730,10 @@ Window:OnClose(function()
     if circle then
         circle:Remove()
     end
+    
+    if distanceText then
+        distanceText:Remove()
+    end
 end)
 
 Window:OnDestroy(function()
@@ -609,5 +746,9 @@ Window:OnDestroy(function()
     
     if circle then
         circle:Remove()
+    end
+    
+    if distanceText then
+        distanceText:Remove()
     end
 end)
