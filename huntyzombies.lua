@@ -8,183 +8,6 @@ local LocalPlayer = Players.LocalPlayer
 local displayName = LocalPlayer.DisplayName
 local userName = LocalPlayer.Name
 
--- Auto Farm System (EXACTLY from your original script)
-local AutoFarm = {}
-AutoFarm.settings = {
-    attackDistance = 10,
-    collectDistance = 15,
-    escapeHealth = 20,
-    enabled = false
-}
-
-AutoFarm.targets = {
-    mobs = {},
-    doors = {},
-    coins = {}
-}
-
-AutoFarm.skills = {
-    active = {},
-    cooldowns = {}
-}
-
-function AutoFarm:autoAttack()
-    if not self.settings.enabled then return end
-    
-    local target = self:findNearestTarget()
-    if not target then return end
-    
-    local distance = self:calculateDistance(target)
-    if distance <= self.settings.attackDistance then
-        self:executeAttack(target)
-    else
-        self:moveToTarget(target)
-    end
-end
-
-function AutoFarm:setDistance(distanceType, value)
-    if distanceType == "attack" then
-        self.settings.attackDistance = value
-    elseif distanceType == "collect" then
-        self.settings.collectDistance = value
-    end
-end
-
-function AutoFarm:scanEnvironment()
-    self.targets.mobs = self:findEntities("mob")
-    self.targets.doors = self:findEntities("door")
-    self.targets.coins = self:findEntities("coin")
-    
-    return {
-        mobs = #self.targets.mobs,
-        doors = #self.targets.doors,
-        coins = #self.targets.coins
-    }
-end
-
-function AutoFarm:manageSkills()
-    for skillName, skillData in pairs(self.skills.active) do
-        if self:canUseSkill(skillName) then
-            self:useSkill(skillName)
-        end
-    end
-end
-
-function AutoFarm:collectCoins()
-    for _, coin in ipairs(self.targets.coins) do
-        local distance = self:calculateDistance(coin)
-        if distance <= self.settings.collectDistance then
-            self:pickupCoin(coin)
-        end
-    end
-end
-
-function AutoFarm:checkEscape()
-    local health = self:getCurrentHealth()
-    if health <= self.settings.escapeHealth then
-        self:executeEscape()
-        return true
-    end
-    return false
-end
-
-function AutoFarm:start()
-    while self.settings.enabled do
-        local environment = self:scanEnvironment()
-        
-        if self:checkEscape() then
-            break
-        end
-        
-        if environment.mobs > 0 then
-            self:autoAttack()
-        end
-        
-        if environment.coins > 0 then
-            self:collectCoins()
-        end
-        
-        self:manageSkills()
-        
-        wait(0.1)
-    end
-end
-
-function AutoFarm:findNearestTarget()
-    local nearest = nil
-    local minDistance = math.huge
-    
-    for _, mob in ipairs(self.targets.mobs) do
-        local distance = self:calculateDistance(mob)
-        if distance < minDistance then
-            minDistance = distance
-            nearest = mob
-        end
-    end
-    
-    return nearest
-end
-
-function AutoFarm:calculateDistance(target)
-    local playerPos = self:getPlayerPosition()
-    local targetPos = target.position
-    return math.sqrt((playerPos.x - targetPos.x)^2 + (playerPos.y - targetPos.y)^2)
-end
-
-function AutoFarm:executeAttack(target)
-    print("Attacking: " .. target.name)
-end
-
-function AutoFarm:moveToTarget(target)
-    print("Moving towards: " .. target.name)
-end
-
-function AutoFarm:findEntities(entityType)
-    return {}
-end
-
-function AutoFarm:canUseSkill(skillName)
-    local cooldown = self.skills.cooldowns[skillName] or 0
-    return cooldown <= 0
-end
-
-function AutoFarm:useSkill(skillName)
-    print("Using skill: " .. skillName)
-    self.skills.cooldowns[skillName] = 5
-end
-
-function AutoFarm:pickupCoin(coin)
-    print("Collecting coin: " .. coin.value)
-end
-
-function AutoFarm:getCurrentHealth()
-    return 100
-end
-
-function AutoFarm:executeEscape()
-    print("Health low! Executing escape...")
-end
-
-function AutoFarm:getPlayerPosition()
-    return {x = 0, y = 0}
-end
-
-function wait(seconds)
-    local start = os.time()
-    repeat until os.time() > start + seconds
-end
-
-function AutoFarm:setupExample()
-    self:setDistance("attack", 8)
-    self:setDistance("collect", 12)
-    self.settings.escapeHealth = 25
-    
-    self.skills.active = {
-        ["Fireball"] = {damage = 50, range = 15},
-        ["Heal"] = {heal = 30, cooldown = 10}
-    }
-end
-
 WindUI:Localization({
     Enabled = true,
     Prefix = "loc:",
@@ -242,7 +65,7 @@ local Window = WindUI:CreateWindow({
     Icon = "rbxassetid://7724950285",
     Author = "loc:WELCOME",
     Folder = "WindUI_Example",
-    Size = UDim2.fromOffset(450, 500),
+    Size = UDim2.fromOffset(450, 400), -- Smaller size: 450x400 instead of 580x490
     Theme = "Dark",
     User = {
         Enabled = true,
@@ -257,7 +80,7 @@ local Window = WindUI:CreateWindow({
             })
         end
     },
-    SideBarWidth = 160,
+    SideBarWidth = 160, -- Reduced sidebar width
 })
 
 Window:CreateTopbarButton("theme-switcher", "moon", function()
@@ -276,129 +99,47 @@ local Tabs = {
 }
 
 local TabHandles = {
-    Elements = Tabs.Main:Tab({ Title = "Auto Farm", Icon = "bot", Desc = "Automation Features" }),
+    Elements = Tabs.Main:Tab({ Title = "loc:UI_ELEMENTS", Icon = "layout-grid", Desc = "UI Elements Example" }),
     Appearance = Tabs.Settings:Tab({ Title = "loc:APPEARANCE", Icon = "brush" }),
     Config = Tabs.Utilities:Tab({ Title = "loc:CONFIGURATION", Icon = "settings" })
 }
 
+-- Remove the paragraph to make it more compact
 TabHandles.Elements:Divider()
 
--- Main Auto Farm Toggle (EXACT implementation)
-local mainToggle = TabHandles.Elements:Toggle({
-    Title = "Enable Auto Farm",
-    Desc = "Master switch for all automation features",
+local toggleState = false
+local featureToggle = TabHandles.Elements:Toggle({
+    Title = "Enable Advanced Features",
+    Desc = "Unlocks additional functionality",
     Value = false,
     Callback = function(state) 
-        AutoFarm.settings.enabled = state
-        if state then
-            AutoFarm:start()
-            WindUI:Notify({
-                Title = "Auto Farm",
-                Content = "Started automation system",
-                Icon = "play",
-                Duration = 2
-            })
-        else
-            WindUI:Notify({
-                Title = "Auto Farm",
-                Content = "Stopped automation system",
-                Icon = "stop",
-                Duration = 2
-            })
-        end
+        toggleState = state
+        WindUI:Notify({
+            Title = "Features",
+            Content = state and "Features Enabled" or "Features Disabled",
+            Icon = state and "check" or "x",
+            Duration = 2
+        })
     end
 })
 
--- Set Distance - slider limit from 0 to 10 (EXACT implementation)
-local distanceSlider = TabHandles.Elements:Slider({
-    Title = "Attack Distance",
-    Desc = "Set the maximum attack distance (0-10)",
-    Value = { Min = 0, Max = 10, Default = 5 },
+local intensitySlider = TabHandles.Elements:Slider({
+    Title = "Effect Intensity",
+    Desc = "Adjust the effect strength",
+    Value = { Min = 0, Max = 100, Default = 50 },
     Callback = function(value)
-        AutoFarm:setDistance("attack", value)
-        WindUI:Notify({
-            Title = "Distance Set",
-            Content = "Attack distance: " .. value,
-            Duration = 2
-        })
+        print("Intensity set to:", value)
     end
 })
 
--- Auto Attack - Switch button (EXACT implementation)
-local autoAttackToggle = TabHandles.Elements:Toggle({
-    Title = "Auto Attack",
-    Desc = "Automatically attack nearby enemies",
-    Value = false,
-    Callback = function(state) 
-        -- This is handled by the main toggle in your original system
+local modeDropdown = TabHandles.Elements:Dropdown({
+    Title = "Select Mode",
+    Values = { "Standard", "Advanced", "Expert" },
+    Value = "Standard",
+    Callback = function(option)
         WindUI:Notify({
-            Title = "Auto Attack",
-            Content = state and "Enabled" or "Disabled",
-            Icon = state and "sword" or "x",
-            Duration = 2
-        })
-    end
-})
-
--- Auto Mobs & Doors - Switch button (EXACT implementation)
-local autoMobsDoorsToggle = TabHandles.Elements:Toggle({
-    Title = "Auto Mobs & Doors",
-    Desc = "Automatically detect and interact with mobs and doors",
-    Value = false,
-    Callback = function(state) 
-        -- This is part of the main loop in your original system
-        WindUI:Notify({
-            Title = "Auto Mobs & Doors",
-            Content = state and "Enabled" or "Disabled",
-            Icon = state and "door-open" or "x",
-            Duration = 2
-        })
-    end
-})
-
--- Auto Skill & Perks - Switch button (EXACT implementation)
-local autoSkillToggle = TabHandles.Elements:Toggle({
-    Title = "Auto Skill & Perks",
-    Desc = "Automatically use skills and perks",
-    Value = false,
-    Callback = function(state) 
-        -- This is part of the main loop in your original system
-        WindUI:Notify({
-            Title = "Auto Skills",
-            Content = state and "Enabled" or "Disabled",
-            Icon = state and "zap" or "x",
-            Duration = 2
-        })
-    end
-})
-
--- Collect Coins - Switch button (EXACT implementation)
-local collectCoinsToggle = TabHandles.Elements:Toggle({
-    Title = "Collect Coins",
-    Desc = "Automatically collect nearby coins",
-    Value = false,
-    Callback = function(state) 
-        -- This is part of the main loop in your original system
-        WindUI:Notify({
-            Title = "Coin Collection",
-            Content = state and "Enabled" or "Disabled",
-            Icon = state and "coin" or "x",
-            Duration = 2
-        })
-    end
-})
-
--- Auto Escape - Switch button (EXACT implementation)
-local autoEscapeToggle = TabHandles.Elements:Toggle({
-    Title = "Auto Escape",
-    Desc = "Automatically escape when health is low",
-    Value = false,
-    Callback = function(state) 
-        -- This is part of the main loop in your original system
-        WindUI:Notify({
-            Title = "Auto Escape",
-            Content = state and "Enabled" or "Disabled",
-            Icon = state and "shield" or "x",
+            Title = "Mode Changed",
+            Content = "Selected: "..option,
             Duration = 2
         })
     end
@@ -406,41 +147,33 @@ local autoEscapeToggle = TabHandles.Elements:Toggle({
 
 TabHandles.Elements:Divider()
 
--- Status display
-TabHandles.Elements:Paragraph({
-    Title = "Farm Status",
-    Desc = "Ready to automate your gameplay",
-    Image = "activity",
-    ImageSize = 20,
-    Color = "Green"
-})
-
--- Test button to check if features work
 TabHandles.Elements:Button({
-    Title = "Test All Features",
-    Icon = "test-tube",
+    Title = "Show Notification",
+    Icon = "bell",
     Callback = function()
         WindUI:Notify({
-            Title = "Feature Test",
-            Content = "Testing all automation features...",
+            Title = "Hello " .. displayName .. "!",
+            Content = "This is a personalized notification for @" .. userName,
+            Icon = "bell",
             Duration = 3
         })
-        
-        -- Test the scan environment function from your original script
-        local environment = AutoFarm:scanEnvironment()
-        print("Mobs found:", environment.mobs)
-        print("Doors found:", environment.doors)
-        print("Coins found:", environment.coins)
-        
-        -- Test other functions
-        AutoFarm:autoAttack()
-        AutoFarm:manageSkills()
-        AutoFarm:collectCoins()
-        AutoFarm:checkEscape()
     end
 })
 
--- Remove the old elements to avoid duplication
+TabHandles.Elements:Colorpicker({
+    Title = "Select Color",
+    Default = Color3.fromHex("#30ff6a"),
+    Transparency = 0,
+    Callback = function(color, transparency)
+        WindUI:Notify({
+            Title = "Color Changed",
+            Content = "New color: "..color:ToHex().."\nTransparency: "..transparency,
+            Duration = 2
+        })
+    end
+})
+
+-- Remove the paragraph to make it more compact
 local themes = {}
 for themeName, _ in pairs(WindUI:GetThemes()) do
     table.insert(themes, themeName)
@@ -496,6 +229,23 @@ WindUI:OnThemeChange(function(theme)
     canchangetheme = true
 end)
 
+TabHandles.Appearance:Button({
+    Title = "Create New Theme",
+    Icon = "plus",
+    Callback = function()
+        Window:Dialog({
+            Title = "Create Theme",
+            Content = "This feature is coming soon!",
+            Buttons = {
+                {
+                    Title = "OK",
+                    Variant = "Primary"
+                }
+            }
+        })
+    end
+})
+
 TabHandles.Config:Paragraph({
     Title = "Configuration Manager",
     Desc = "Save and load your settings",
@@ -504,7 +254,7 @@ TabHandles.Config:Paragraph({
     Color = "White"
 })
 
-local configName = "autofarm_config"
+local configName = "default"
 local configFile = nil
 local MyPlayerData = {
     name = displayName,
@@ -517,7 +267,7 @@ TabHandles.Config:Input({
     Title = "Config Name",
     Value = configName,
     Callback = function(value)
-        configName = value or "autofarm_config"
+        configName = value or "default"
     end
 })
 
@@ -532,17 +282,13 @@ if ConfigManager then
         Callback = function()
             configFile = ConfigManager:CreateConfig(configName)
             
-            -- Register all farm settings (EXACTLY as in your original)
-            configFile:Register("mainToggle", mainToggle)
-            configFile:Register("distanceSlider", distanceSlider)
-            configFile:Register("autoAttackToggle", autoAttackToggle)
-            configFile:Register("autoMobsDoorsToggle", autoMobsDoorsToggle)
-            configFile:Register("autoSkillToggle", autoSkillToggle)
-            configFile:Register("collectCoinsToggle", collectCoinsToggle)
-            configFile:Register("autoEscapeToggle", autoEscapeToggle)
+            configFile:Register("featureToggle", featureToggle)
+            configFile:Register("intensitySlider", intensitySlider)
+            configFile:Register("modeDropdown", modeDropdown)
+            configFile:Register("themeDropdown", themeDropdown)
+            configFile:Register("transparencySlider", transparencySlider)
             
             configFile:Set("playerData", MyPlayerData)
-            configFile:Set("AutoFarmSettings", AutoFarm.settings)
             configFile:Set("lastSave", os.date("%Y-%m-%d %H:%M:%S"))
             
             if configFile:Save() then
@@ -574,9 +320,6 @@ if ConfigManager then
                 if loadedData.playerData then
                     MyPlayerData = loadedData.playerData
                 end
-                if loadedData.AutoFarmSettings then
-                    AutoFarm.settings = loadedData.AutoFarmSettings
-                end
                 
                 local lastSave = loadedData.lastSave or "Unknown"
                 WindUI:Notify({ 
@@ -584,6 +327,15 @@ if ConfigManager then
                     Content = "Loaded: "..configName.."\nLast save: "..lastSave,
                     Icon = "refresh-cw",
                     Duration = 5
+                })
+                
+                TabHandles.Config:Paragraph({
+                    Title = "Player Data",
+                    Desc = string.format("Name: %s (@%s)\nLevel: %d\nInventory: %s", 
+                        MyPlayerData.name, 
+                        MyPlayerData.username, 
+                        MyPlayerData.level, 
+                        table.concat(MyPlayerData.inventory, ", "))
                 })
             else
                 WindUI:Notify({ 
@@ -605,17 +357,41 @@ else
     })
 end
 
--- Setup example configuration from your original script
-AutoFarm:setupExample()
-
--- Initial notification
-WindUI:Notify({
-    Title = "Auto Farm Loaded",
-    Content = "All features are ready! Enable them from the Auto Farm tab",
-    Duration = 5
+-- Remove footer section to make it more compact
+TabHandles.Config:Paragraph({
+    Title = "Created with ❤️",
+    Desc = "github.com/Footagesus/WindUI",
+    Image = "github",
+    ImageSize = 20,
+    Color = "Grey",
+    Buttons = {
+        {
+            Title = "Copy Link",
+            Icon = "copy",
+            Variant = "Tertiary",
+            Callback = function()
+                setclipboard("https://github.com/Footagesus/WindUI")
+                WindUI:Notify({
+                    Title = "Copied!",
+                    Content = "GitHub link copied to clipboard",
+                    Duration = 2
+                })
+            end
+        }
+    }
 })
 
-print("Auto Farm System Initialized Successfully!")
-print("Attack Distance:", AutoFarm.settings.attackDistance)
-print("Collect Distance:", AutoFarm.settings.collectDistance)
-print("Escape Health:", AutoFarm.settings.escapeHealth)
+Window:OnClose(function()
+    print("Window closed for user: " .. userName)
+    
+    if ConfigManager and configFile then
+        configFile:Set("playerData", MyPlayerData)
+        configFile:Set("lastSave", os.date("%Y-%m-%d %H:%M:%S"))
+        configFile:Save()
+        print("Config auto-saved on close")
+    end
+end)
+
+Window:OnDestroy(function()
+    print("Window destroyed for user: " .. userName)
+end)
