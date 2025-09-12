@@ -8,6 +8,9 @@ local LocalPlayer = Players.LocalPlayer
 local displayName = LocalPlayer.DisplayName
 local userName = LocalPlayer.Name
 
+-- Check if running on mobile
+local isMobile = game:GetService("UserInputService").TouchEnabled
+
 WindUI:Localization({
     Enabled = true,
     Prefix = "loc:",
@@ -40,7 +43,8 @@ WindUI:Localization({
             ["AUTO_AIM"] = "Auto Aim",
             ["AIM_KEY"] = "Aim Keybind",
             ["TELEPORT"] = "Teleport",
-            ["TELEPORT_DESC"] = "Teleport to specific coordinates"
+            ["TELEPORT_DESC"] = "Teleport to specific coordinates",
+            ["MISC"] = "Miscellaneous"
         }
     }
 })
@@ -74,12 +78,15 @@ WindUI:Popup({
     }
 })
 
+-- Adjust window size for mobile
+local windowSize = isMobile and UDim2.fromOffset(400, 450) or UDim2.fromOffset(500, 500)
+
 local Window = WindUI:CreateWindow({
     Title = "loc:WINDUI_EXAMPLE",
     Icon = "rbxassetid://7724950285",
     Author = "loc:WELCOME",
     Folder = "WindUI_Example",
-    Size = UDim2.fromOffset(500, 500),
+    Size = windowSize,
     Theme = "Dark",
     User = {
         Enabled = true,
@@ -94,7 +101,7 @@ local Window = WindUI:CreateWindow({
             })
         end
     },
-    SideBarWidth = 160,
+    SideBarWidth = isMobile and 140 or 160,
 })
 
 Window:CreateTopbarButton("theme-switcher", "moon", function()
@@ -110,14 +117,17 @@ local Tabs = {
     Main = Window:Section({ Title = "loc:FEATURES", Opened = true }),
     Settings = Window:Section({ Title = "loc:SETTINGS", Opened = true }),
     Utilities = Window:Section({ Title = "loc:UTILITIES", Opened = true }),
-    Aimbot = Window:Section({ Title = "loc:AIMBOT", Opened = true })
+    Aimbot = Window:Section({ Title = "loc:AIMBOT", Opened = true }),
+    Teleport = Window:Section({ Title = "loc:TELEPORT", Opened = true }),
+    Misc = Window:Section({ Title = "loc:MISC", Opened = true })
 }
 
 local TabHandles = {
     Elements = Tabs.Main:Tab({ Title = "loc:UI_ELEMENTS", Icon = "layout-grid", Desc = "UI Elements Example" }),
-    Appearance = Tabs.Settings:Tab({ Title = "loc:APPEARANCE", Icon = "brush" }),
     Config = Tabs.Utilities:Tab({ Title = "loc:CONFIGURATION", Icon = "settings" }),
-    AimbotTab = Tabs.Aimbot:Tab({ Title = "loc:AIMBOT_SETTINGS", Icon = "target", Desc = "loc:AIMBOT_DESC" })
+    AimbotTab = Tabs.Aimbot:Tab({ Title = "loc:AIMBOT_SETTINGS", Icon = "target", Desc = "loc:AIMBOT_DESC" }),
+    TeleportTab = Tabs.Teleport:Tab({ Title = "loc:TELEPORT", Icon = "navigation", Desc = "loc:TELEPORT_DESC" }),
+    MiscTab = Tabs.Misc:Tab({ Title = "loc:MISC", Icon = "settings" })
 }
 
 -- Teleport function
@@ -151,13 +161,36 @@ local function teleportToPosition(position)
     end
 end
 
--- Add teleport button to Utilities tab
-TabHandles.Config:Button({
+-- Add teleport button to Teleport tab
+TabHandles.TeleportTab:Button({
     Title = "Teleport to Position",
     Icon = "navigation",
     Desc = "Teleport to X: 510.43, Y: 3.59, Z: 597.36",
     Callback = function()
         teleportToPosition(Vector3.new(510.43, 3.59, 597.36))
+    end
+})
+
+-- Add more teleport options if needed
+TabHandles.TeleportTab:Input({
+    Title = "Custom Position",
+    Value = "X, Y, Z",
+    Callback = function(value)
+        local coords = {}
+        for coord in string.gmatch(value, "[%d%.]+") do
+            table.insert(coords, tonumber(coord))
+        end
+        
+        if #coords == 3 then
+            teleportToPosition(Vector3.new(coords[1], coords[2], coords[3]))
+        else
+            WindUI:Notify({
+                Title = "Invalid Format",
+                Content = "Please use format: X, Y, Z",
+                Icon = "x",
+                Duration = 3
+            })
+        end
     end
 })
 
@@ -476,8 +509,7 @@ TabHandles.AimbotTab:Paragraph({
     Color = "White"
 })
 
--- [Rest of your existing UI code remains the same]
--- Remove the paragraph to make it more compact
+-- UI Elements Tab
 TabHandles.Elements:Divider()
 
 local toggleState = false
@@ -546,14 +578,14 @@ TabHandles.Elements:Colorpicker({
     end
 })
 
--- Remove the paragraph to make it more compact
+-- Configuration Tab (moved from Appearance)
 local themes = {}
 for themeName, _ in pairs(WindUI:GetThemes()) do
     table.insert(themes, themeName)
 end
 table.sort(themes)
 
-local themeDropdown = TabHandles.Appearance:Dropdown({
+local themeDropdown = TabHandles.Config:Dropdown({
     Title = "loc:THEME_SELECT",
     Values = themes,
     Value = "Dark",
@@ -568,7 +600,7 @@ local themeDropdown = TabHandles.Appearance:Dropdown({
     end
 })
 
-local transparencySlider = TabHandles.Appearance:Slider({
+local transparencySlider = TabHandles.Config:Slider({
     Title = "loc:TRANSPARENCY",
     Value = { 
         Min = 0,
@@ -584,7 +616,7 @@ local transparencySlider = TabHandles.Appearance:Slider({
 
 local canchangetheme = true
 
-local ThemeToggle = TabHandles.Appearance:Toggle({
+local ThemeToggle = TabHandles.Config:Toggle({
     Title = "Enable Dark Mode",
     Desc = "Use dark color scheme",
     Value = true,
@@ -602,7 +634,7 @@ WindUI:OnThemeChange(function(theme)
     canchangetheme = true
 end)
 
-TabHandles.Appearance:Button({
+TabHandles.Config:Button({
     Title = "Create New Theme",
     Icon = "plus",
     Callback = function()
@@ -619,6 +651,7 @@ TabHandles.Appearance:Button({
     end
 })
 
+-- Configuration Manager
 TabHandles.Config:Paragraph({
     Title = "Configuration Manager",
     Desc = "Save and load your settings",
@@ -729,6 +762,38 @@ else
         Color = "White"
     })
 end
+
+-- Misc Tab
+TabHandles.MiscTab:Button({
+    Title = "Reset Character",
+    Icon = "refresh-cw",
+    Callback = function()
+        local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.Health = 0
+            WindUI:Notify({
+                Title = "Character Reset",
+                Content = "Your character will respawn shortly",
+                Icon = "refresh-cw",
+                Duration = 3
+            })
+        end
+    end
+})
+
+TabHandles.MiscTab:Button({
+    Title = "Server Info",
+    Icon = "server",
+    Callback = function()
+        local players = game:GetService("Players")
+        WindUI:Notify({
+            Title = "Server Information",
+            Content = "Players: " .. #players:GetPlayers() .. "/" .. players.MaxPlayers,
+            Icon = "info",
+            Duration = 5
+        })
+    end
+})
 
 -- Remove footer section to make it more compact
 TabHandles.Config:Paragraph({
