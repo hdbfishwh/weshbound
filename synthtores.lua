@@ -131,7 +131,7 @@ local TabHandles = {
 }
 
 -- Teleport function
-local function teleportToPosition(position)
+local function teleportToPosition(position, locationName)
     local character = LocalPlayer.Character
     if character then
         local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
@@ -139,7 +139,7 @@ local function teleportToPosition(position)
             humanoidRootPart.CFrame = CFrame.new(position)
             WindUI:Notify({
                 Title = "Teleport",
-                Content = "Teleported to position: " .. tostring(position),
+                Content = "Teleported to " .. (locationName or "position: " .. tostring(position)),
                 Icon = "check",
                 Duration = 3
             })
@@ -161,13 +161,22 @@ local function teleportToPosition(position)
     end
 end
 
--- Add teleport button to Teleport tab
+-- Add teleport buttons to Teleport tab
 TabHandles.TeleportTab:Button({
-    Title = "Teleport to Position",
+    Title = "Marshmellow Item",
     Icon = "navigation",
     Desc = "Teleport to X: 510.43, Y: 3.59, Z: 597.36",
     Callback = function()
-        teleportToPosition(Vector3.new(510.43, 3.59, 597.36))
+        teleportToPosition(Vector3.new(510.43, 3.59, 597.36), "Marshmellow Item")
+    end
+})
+
+TabHandles.TeleportTab:Button({
+    Title = "House",
+    Icon = "home",
+    Desc = "Teleport to X: 984.21, Y: 10.11, Z: 218.56",
+    Callback = function()
+        teleportToPosition(Vector3.new(984.21, 10.11, 218.56), "House")
     end
 })
 
@@ -182,7 +191,7 @@ TabHandles.TeleportTab:Input({
         end
         
         if #coords == 3 then
-            teleportToPosition(Vector3.new(coords[1], coords[2], coords[3]))
+            teleportToPosition(Vector3.new(coords[1], coords[2], coords[3]), "custom position")
         else
             WindUI:Notify({
                 Title = "Invalid Format",
@@ -836,7 +845,7 @@ Window:OnClose(function()
     end
     
     if circle then
-        circle:Remove()
+            circle:Remove()
     end
     
     if distanceText then
