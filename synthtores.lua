@@ -38,7 +38,9 @@ WindUI:Localization({
             ["MAX_DISTANCE"] = "Max Detection Distance",
             ["SHOW_DISTANCE"] = "Show Distance",
             ["AUTO_AIM"] = "Auto Aim",
-            ["AIM_KEY"] = "Aim Keybind"
+            ["AIM_KEY"] = "Aim Keybind",
+            ["TELEPORT"] = "Teleport",
+            ["TELEPORT_DESC"] = "Teleport to specific coordinates"
         }
     }
 })
@@ -117,6 +119,47 @@ local TabHandles = {
     Config = Tabs.Utilities:Tab({ Title = "loc:CONFIGURATION", Icon = "settings" }),
     AimbotTab = Tabs.Aimbot:Tab({ Title = "loc:AIMBOT_SETTINGS", Icon = "target", Desc = "loc:AIMBOT_DESC" })
 }
+
+-- Teleport function
+local function teleportToPosition(position)
+    local character = LocalPlayer.Character
+    if character then
+        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+        if humanoidRootPart then
+            humanoidRootPart.CFrame = CFrame.new(position)
+            WindUI:Notify({
+                Title = "Teleport",
+                Content = "Teleported to position: " .. tostring(position),
+                Icon = "check",
+                Duration = 3
+            })
+        else
+            WindUI:Notify({
+                Title = "Teleport Failed",
+                Content = "HumanoidRootPart not found",
+                Icon = "x",
+                Duration = 3
+            })
+        end
+    else
+        WindUI:Notify({
+            Title = "Teleport Failed",
+            Content = "Character not found",
+            Icon = "x",
+            Duration = 3
+        })
+    end
+end
+
+-- Add teleport button to Utilities tab
+TabHandles.Config:Button({
+    Title = "Teleport to Position",
+    Icon = "navigation",
+    Desc = "Teleport to X: 510.43, Y: 3.59, Z: 597.36",
+    Callback = function()
+        teleportToPosition(Vector3.new(510.43, 3.59, 597.36))
+    end
+})
 
 -- Aimbot functionality
 local aimbotEnabled = false
